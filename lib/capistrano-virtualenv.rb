@@ -7,10 +7,9 @@ module Capistrano
     def self.extended(configuration)
       configuration.load {
         namespace(:virtualenv) {
-          _cset(:virtualenv_use_system, false) # controls whether virtualenv should be use system packages or not.
-          _cset(:virtualenv_script_url, "https://raw.github.com/pypa/virtualenv/1.9.1/virtualenv.py")
-          _cset(:virtualenv_script_file) { File.join(shared_path, "virtualenv", File.basename(URI.parse(virtualenv_script_url).path)) }
-          _cset(:virtualenv_bootstrap_python, "python") # the python executable which will be used to craete virtualenv
+          _cset(:virtualenv_use_system, false)
+          _cset(:virtualenv_bootstrap_python, "python")
+          _cset(:virtualenv_bootstrap_virtualenv, "/usr/local/bin/virtualenv")
           _cset(:virtualenv_cmd) { command }
           _cset(:virtualenv_default_options) {
             options = %w(--distribute --quiet)
@@ -18,10 +17,6 @@ module Capistrano
             options
           }
           _cset(:virtualenv_options) { virtualenv_default_options + fetch(:virtualenv_extra_options, []) }
-          _cset(:virtualenv_easy_install_options) { # TODO: remove this
-            logger.info(":virtualenv_easy_install_options has been deprecated.")
-            %w(--quiet)
-          }
           _cset(:virtualenv_pip_default_options, %w(--quiet))
           _cset(:virtualenv_pip_options) { virtualenv_pip_default_options + fetch(:virtualenv_pip_extra_options, []) }
           _cset(:virtualenv_pip_install_options, [])
@@ -35,35 +30,6 @@ module Capistrano
           _cset(:virtualenv_shared_path) { File.join(shared_path, "virtualenv", "shared") }
           _cset(:virtualenv_shared_bin_path) { File.join(virtualenv_shared_path, "bin") }
           _cset(:virtualenv_shared_python) { File.join(virtualenv_shared_bin_path, "python") }
-          _cset(:virtualenv_shared_easy_install) { # TODO: remove this
-            logger.info(":virtualenv_shared_easy_install has been deprecated.")
-            File.join(virtualenv_shared_bin_path, "easy_install")
-          }
-          _cset(:virtualenv_shared_easy_install_cmd) { # TODO: remove this
-            # execute from :virtualenv_shared_python
-            # since `virtualenv --relocatable` will not set shebang line with absolute path.
-            logger.info(":virtualenv_shared_easy_install_cmd has been deprecated.")
-            [
-              virtualenv_shared_python.dump,
-              virtualenv_shared_easy_install.dump,
-              virtualenv_easy_install_options.map { |x| x.dump }.join(" "),
-            ].join(" ")
-          }
-          # execute from :virtualenv_shared_python
-          # since `virtualenv --relocatable` will not set shebang line with absolute path.
-          _cset(:virtualenv_shared_pip) { # TODO: remove this
-            logger.info(":virtualenv_shared_pip has been deprecated.")
-            File.join(virtualenv_shared_bin_path, "pip")
-          }
-          _cset(:virtualenv_shared_pip_cmd) { # TODO: remove this
-            logger.info(":virtualenv_shared_pip_cmd has been deprecated.")
-            [
-              virtualenv_shared_python.dump,
-              virtualenv_shared_pip.dump,
-              virtualenv_pip_options.map { |x| x.dump }.join(" "),
-            ].join(" ")
-          }
-
           ## release virtualenv
           ## - created in release_path
           ## - common libs are copied from shared virtualenv
@@ -71,32 +37,6 @@ module Capistrano
           _cset(:virtualenv_release_path) { File.join(release_path, "vendor", "virtualenv") } # the path where runtime virtualenv will be created
           _cset(:virtualenv_release_bin_path) { File.join(virtualenv_release_path, "bin") }
           _cset(:virtualenv_release_python) { File.join(virtualenv_release_bin_path, "python") } # the python executable within virtualenv
-          _cset(:virtualenv_release_easy_install) { # TODO: remove this
-            logger.info(":virtualenv_release_easy_install has been deprecated.")
-            File.join(virtualenv_release_bin_path, "easy_install")
-          }
-          _cset(:virtualenv_release_easy_install_cmd) { # TODO: remove this
-            # execute from :virtualenv_release_python
-            # since `virtualenv --relocatable` will not set shebang line with absolute path.
-            logger.info(":virtualenv_release_easy_install_cmd has been deprecated.")
-            [
-              virtualenv_release_python.dump,
-              virtualenv_release_easy_install.dump,
-              virtualenv_easy_install_options.map { |x| x.dump }.join(" "),
-            ].join(" ")
-          }
-          _cset(:virtualenv_release_pip) { # TODO: remove this
-            logger.info(":virtualenv_release_pip has been deprecated.")
-            File.join(virtualenv_release_bin_path, "pip")
-          }
-          _cset(:virtualenv_release_pip_cmd) { # TODO: remove this
-            logger.info(":virtualenv_release_pip_cmd has been deprecated.")
-            [
-              virtualenv_release_python.dump,
-              virtualenv_release_pip.dump,
-              virtualenv_pip_options.map { |x| x.dump }.join(" "),
-            ].flatten.join(" ")
-          }
 
           ## current virtualenv
           ## - placed in current_path
@@ -104,33 +44,6 @@ module Capistrano
           _cset(:virtualenv_current_path) { File.join(current_path, "vendor", "virtualenv") }
           _cset(:virtualenv_current_bin_path) { File.join(virtualenv_current_path, "bin") }
           _cset(:virtualenv_current_python) { File.join(virtualenv_current_bin_path, "python") }
-          _cset(:virtualenv_current_easy_install) { # TODO: remove this
-            logger.info(":virtualenv_current_easy_install has been deprecated.")
-            File.join(virtualenv_current_bin_path, "easy_install")
-          }
-          _cset(:virtualenv_current_easy_install_cmd) { # TODO: remove this
-            # execute from :virtualenv_current_python
-            # since `virtualenv --relocatable` will not set shebang line with absolute path.
-            logger.info(":virtualenv_current_easy_install_cmd has been deprecated.")
-            [
-              virtualenv_current_python.dump,
-              virtualenv_current_easy_install.dump,
-              virtualenv_easy_install_options.map { |x| x.dump }.join(" "),
-            ].join(" ")
-          }
-          _cset(:virtualenv_current_pip) {
-            logger.info(":virtualenv_current_pip has been deprecated.")
-            File.join(virtualenv_current_path, "bin", "pip")
-          }
-          _cset(:virtualenv_current_pip_cmd) {
-            logger.info(":virtualenv_current_pip_cmd has been deprecated.")
-            [
-              virtualenv_current_python.dump,
-              virtualenv_current_pip.dump,
-              virtualenv_pip_options.map { |x| x.dump }.join(" "),
-            ].flatten.join(" ")
-          }
-
           desc("Setup virtualenv.")
           task(:setup, :except => { :no_release => true }) {
             transaction {
@@ -143,8 +56,7 @@ module Capistrano
 
           desc("Install virtualenv.")
           task(:install, :except => { :no_release => true }) {
-            run("mkdir -p #{File.dirname(virtualenv_script_file).dump}")
-            run("test -f #{virtualenv_script_file.dump} || wget --no-verbose -O #{virtualenv_script_file.dump} #{virtualenv_script_url.dump}")
+            # BOTCH: nothing for now
           }
 
           _cset(:virtualenv_install_packages, %w(python rsync))
@@ -154,13 +66,13 @@ module Capistrano
 
           desc("Uninstall virtualenv.")
           task(:uninstall, :except => { :no_release => true }) {
-            run("rm -f #{virtualenv_script_file.dump}")
+            # BOTCH: nothing for now
           }
 
           def command(options={})
             [
               virtualenv_bootstrap_python,
-              virtualenv_script_file.dump,
+              virtualenv_bootstrap_virtualenv,
               virtualenv_options.map { |x| x.dump }.join(" "),
             ].join(" ")
           end
@@ -211,19 +123,12 @@ module Capistrano
           def relocate(source, destination, options={})
             execute = []
             execute << "mkdir -p #{File.dirname(destination).dump}"
-            # TODO: turn :virtualenv_use_relocatable true if it will be an official features.
-            # `virtualenv --relocatable` does not work expectedly as of virtualenv 1.7.2.
-            if fetch(:virtualenv_use_relocatable, false)
-              execute << %{#{command(options)} --relocatable #{source.dump}}
-              execute << %{cp -RPp #{source.dump} #{destination.dump}}
-            else
-              execute << %{( test -d #{destination.dump} || #{command(options)} #{destination.dump} )}
-              # copy binaries and scripts from shared virtualenv
-              execute << %{rsync -lrpt #{File.join(source, "bin/").dump} #{File.join(destination, "bin/").dump}}
-              execute << %{sed -i -e 's|^#!#{source}/bin/python.*$|#!#{destination}/bin/python|' #{destination}/bin/*}
-              # copy libraries from shared virtualenv
-              execute << %{rsync -lrpt #{File.join(source, "lib/").dump} #{File.join(destination, "lib/").dump}}
-            end
+            execute << %{( test -d #{destination.dump} || #{command(options)} #{destination.dump} )}
+            # copy binaries and scripts from shared virtualenv
+            execute << %{rsync -lrpt #{File.join(source, "bin/").dump} #{File.join(destination, "bin/").dump}}
+            execute << %{sed -i -e 's|^#!#{source}/bin/python.*$|#!#{destination}/bin/python|' #{destination}/bin/*}
+            # copy libraries from shared virtualenv
+            execute << %{rsync -lrpt #{File.join(source, "lib/").dump} #{File.join(destination, "lib/").dump}}
             invoke_command(execute.join(" && "), options)
           end
 
@@ -233,8 +138,10 @@ module Capistrano
 
           def exec(cmdline, options={})
             options = options.dup
-            virtualenv = ( options.delete(:virtualenv) || virtualenv_shared_path )
-            options[:env] = options.fetch(:env, {}).merge("PATH" => [ File.join(virtualenv, "bin"), "$PATH" ].join(":"))
+            venv = ( options.delete(:virtualenv) || virtualenv_shared_path )
+            path = [ File.join(venv, "bin"), "$PATH" ].join(":")
+            env = options.fetch(:env, {})
+            options[:env] = env.merge({"PATH" => path, "VIRTUAL_ENV" => venv})
             invoke_command(cmdline, options)
           end
         }
@@ -246,5 +153,3 @@ end
 if Capistrano::Configuration.instance
   Capistrano::Configuration.instance.extend(Capistrano::Virtualenv)
 end
-
-# vim:set ft=ruby :
